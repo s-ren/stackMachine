@@ -1,0 +1,29 @@
+# Build directories
+build/
+out/
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+compile_commands.json
+*.cmake
+
+# TableGen generated files
+*.inc
+
+# Compiled binaries and objects
+*.o
+*.a
+*.so
+*.dylib
+
+# Executables
+stack
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo

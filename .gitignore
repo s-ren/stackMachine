@@ -1,29 +1,19 @@
-# Build directories
+# Build directory
 build/
-out/
 
-# CMake generated files
-CMakeCache.txt
-CMakeFiles/
-cmake_install.cmake
-Makefile
-compile_commands.json
-*.cmake
+# Compiled output
+bin/
 
 # TableGen generated files
-*.inc
+src/ir/*.inc
 
-# Compiled binaries and objects
+# Compiled object/library artifacts
 *.o
 *.a
 *.so
 *.dylib
 
-# Executables
-stack
-
 # IDE / editor
-.vscode/
 .idea/
 *.swp
 *.swo

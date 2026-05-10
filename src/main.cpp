@@ -3,9 +3,6 @@
 #include <fstream>
 #include "include/CLI11.hpp"
 
-// include project headers
-#include "lexer/token.h"
-#include "parser/parser.h"
 
 using string = std::string;
 
@@ -55,7 +52,6 @@ int main(int argc, char *argv[]) {
     if (verbose) {
         std::cout << "Parsing..." << std::endl;
     }
-    string ir = parse(input);
 
     // compile IR into binary
     if (verbose) {

@@ -13,7 +13,7 @@ def StackIR_Dialect : Dialect {
 // define a base class for all stack operations
 class StackIR_Op<string mnemonic, list<Trait> traits = []> :
    Op<StackIR_Dialect, mnemonic, traits> {
-    let arguments = (ins OptionalAttr<I32Attr>:$stack_ptr)
+    let arguments = (ins OptionalAttr<I32Attr>:$stack_ptr);
    }
 
 def StopOp: StackIR_Op<"stop", []> {

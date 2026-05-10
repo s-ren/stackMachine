@@ -1,5 +1,0 @@
-store 170
-pop
-pop
-dup
-stop

@@ -1,6 +1,0 @@
-sub
-store 57
-sub
-dup
-store 159
-stop

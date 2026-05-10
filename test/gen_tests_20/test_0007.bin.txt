@@ -1,4 +1,0 @@
-sub
-store 20
-add
-stop

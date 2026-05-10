@@ -1,9 +1,0 @@
-dup
-store 219
-add
-sub
-load 86
-add
-add
-add
-stop

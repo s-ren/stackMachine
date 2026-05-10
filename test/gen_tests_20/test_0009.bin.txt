@@ -1,0 +1,10 @@
+load 84
+pop
+sub
+add
+sub
+store 151
+sub
+pop
+pop
+stop

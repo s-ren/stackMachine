@@ -1,0 +1,17 @@
+add
+store 129
+add
+dup
+dup
+store 195
+store 175
+add
+add
+load 244
+load 194
+dup
+pop
+sub
+pop
+dup
+stop

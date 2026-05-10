@@ -1,0 +1,13 @@
+load 2
+load 21
+sub
+sub
+pop
+load 164
+add
+pop
+pop
+load 219
+add
+dup
+stop

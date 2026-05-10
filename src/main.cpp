@@ -1,67 +1,86 @@
+#include "parser/parser.h"
+
 // include standard library headers
 #include <iostream>
 #include <fstream>
+#include <stdexcept>
+#include <vector>
 #include "include/CLI11.hpp"
-
 
 using string = std::string;
 
-/*
-    kaleidoscope requires a source file as input and produces a binary file as output.
-    It takes the following flags:
-    -i <input_file>: specify the input file path (required)
-    -o <output_file>: specify the output file path (required)
-    -v: verbose mode.
-    -h: display help message
-*/
+std::vector<uint8_t> read_file(const string &source_file_name) {
+    std::ifstream input_file(source_file_name, std::ios::binary);
+    if (!input_file.is_open()) {
+        throw std::runtime_error("Could not open file " + source_file_name);
+    }
+    return std::vector<uint8_t>(std::istreambuf_iterator<char>(input_file),
+                                std::istreambuf_iterator<char>());
+}
+
+// Parse a string of the form "0x010xcc0x00..." into bytes.
+std::vector<uint8_t> parse_cmdline(const string &hex_str) {
+    if (hex_str.size() % 2 != 0)
+        throw std::runtime_error("Hex string length must be even");
+    std::vector<uint8_t> result;
+    for (size_t pos = 0; pos < hex_str.size(); pos += 2) {
+        string byte_str = hex_str.substr(pos, 2);
+        result.push_back(static_cast<uint8_t>(std::stoul(byte_str, nullptr, 16)));
+    }
+    return result;
+}
+
 int main(int argc, char *argv[]) {
-    // command line parsing using CLI11 library
-    CLI::App app{"Kaleidoscope Compiler"};
+    CLI::App app{"Stack Compiler"};
     argv = app.ensure_utf8(argv);
 
-    string input_file_name;
-    string command_file_name;
-    string output_file_name;
-    bool verbose = false;
+    string source_file_name;
+    string cmdline_hex;
+    string target_file_name;
 
-    app.add_option("-i,--input", input_file_name, "Input source file")->required();
-    app.add_option("-o,--output", output_file_name, "Output binary file")->required();
-    app.add_flag("-v,--verbose", verbose, "Verbose mode");
-    // execute the command line parser and handle errors
+    auto *opt_i = app.add_option("-i,--input", source_file_name, "Input source file");
+    auto *opt_c = app.add_option("-c,--cmdline", cmdline_hex,
+                                 "Inline bytecode as hex string, e.g. 0001cc00");
+    opt_i->excludes(opt_c);
+    opt_c->excludes(opt_i);
+    app.add_option("-o,--output", target_file_name, "Output binary file (default: stdout)");
+    app.require_option(1, 2); // at least one of -i/-c must be given
+
     try {
         app.parse(argc, argv);
     } catch (const CLI::ParseError &e) {
         return app.exit(e);
     }
 
-    // read to input file
-    if (verbose) {
-        std::cout << "Opening input file " << input_file_name << "..." << std::endl;
+    std::vector<uint8_t> input;
+    if (!source_file_name.empty()) {
+        std::cout << "Reading source file..." << std::endl;
+        input = read_file(source_file_name);
+    } else {
+        std::cout << "Parsing inline bytecode..." << std::endl;
+        input = parse_cmdline(cmdline_hex);
     }
-    std::ifstream input_file(input_file_name);
-    if (!input_file.is_open()) {
-        std::cerr << "Error: Could not open file " << input_file_name << std::endl;
-        return 1;
-    }
-
-    std::ostringstream input_buffer;
-    input_buffer << input_file.rdbuf();
-    string input = input_buffer.str();
 
     // parse the input file to generate the IR
-    if (verbose) {
-        std::cout << "Parsing..." << std::endl;
-    }
+    std::cout << "Parsing..." << std::endl;
+    parser::parse(input);
 
     // compile IR into binary
-    if (verbose) {
-        std::cout << "Compiling..." << std::endl;
-    }
+    std::cout << "Compiling..." << std::endl;
 
 
     // write to output file
-    if (verbose) {
-        std::cout << "Writing to output file " << output_file_name << "..." << std::endl;
+    if (!target_file_name.empty()) {
+        std::ofstream output_file(target_file_name, std::ios::binary);
+        if (!output_file.is_open()) {
+            std::cerr << "Error: Could not open file " << target_file_name << std::endl;
+            return 1;
+        }
+        // TODO: write compiled output to output_file
+        std::cout << "Writing output to file..." << std::endl;
+    } else {
+        // TODO: write compiled output to std::cout
+        std::cout << "Writing output to stdout..." << std::endl;
     }
 
     return 0;

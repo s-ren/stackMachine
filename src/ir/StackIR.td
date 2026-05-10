@@ -13,7 +13,7 @@ def StackIR_Dialect : Dialect {
 // define a base class for all stack operations
 class StackIR_Op<string mnemonic, list<Trait> traits = []> :
    Op<StackIR_Dialect, mnemonic, traits> {
-    let arguments = (ins OptionalAttr<I32Attr>:$stack_ptr);
+    let arguments = (ins I32Attr:$stack_ptr);
    }
 
 def StopOp: StackIR_Op<"stop", []> {
@@ -29,7 +29,7 @@ def LoadOp: StackIR_Op<"load", []> {
   let description = [{
     This operation represents pushing the ith word from the input file onto the stack.
   }];
-  let arguments = (ins I8Attr:$index, OptionalAttr<I32Attr>:$stack_ptr);
+  let arguments = (ins I8Attr:$index, I32Attr:$stack_ptr);
 }
 
 def StoreOp: StackIR_Op<"store", []> {
@@ -37,7 +37,7 @@ def StoreOp: StackIR_Op<"store", []> {
   let description = [{
     This operation represents takingthe top value from the stack and writing it to the ith word in the output file.
   }];
-  let arguments = (ins I8Attr:$index, OptionalAttr<I32Attr>:$stack_ptr);
+  let arguments = (ins I8Attr:$index, I32Attr:$stack_ptr);
 }
 
 def PopOp: StackIR_Op<"pop", []> {

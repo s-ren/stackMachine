@@ -78,4 +78,5 @@ target_link_libraries(stack PRIVATE
   MLIRIR
   MLIRParser
   MLIRSupport
+  MLIRLLVMDialect
 )

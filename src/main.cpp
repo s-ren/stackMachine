@@ -1,4 +1,11 @@
+// mlir includes
+#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/MLIRContext.h"
+#include "llvm/Support/raw_ostream.h"
+
+// project includes
 #include "parser/parser.h"
+#include "passes/lower.h"
 
 // include standard library headers
 #include <iostream>
@@ -52,6 +59,7 @@ int main(int argc, char *argv[]) {
         return app.exit(e);
     }
 
+    try {
     std::vector<uint8_t> input;
     if (!source_file_name.empty()) {
         std::cout << "Reading source file..." << std::endl;
@@ -63,11 +71,16 @@ int main(int argc, char *argv[]) {
 
     // parse the input file to generate the IR
     std::cout << "Parsing..." << std::endl;
-    parser::parse(input);
+    mlir::MLIRContext context;
+    mlir::ModuleOp stackIR_module = parser::parse(context, input);
+
+    // print the MLIR module
+    stackIR_module.print(llvm::outs());
+    llvm::outs() << "\n";
 
     // compile IR into binary
-    std::cout << "Compiling..." << std::endl;
-
+    std::cout << "Lowering..." << std::endl;
+    mlir::ModuleOp llvm_module = lower::lower(context, stackIR_module);
 
     // write to output file
     if (!target_file_name.empty()) {
@@ -81,6 +94,11 @@ int main(int argc, char *argv[]) {
     } else {
         // TODO: write compiled output to std::cout
         std::cout << "Writing output to stdout..." << std::endl;
+    }
+
+    } catch (const std::exception &e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return 1;
     }
 
     return 0;

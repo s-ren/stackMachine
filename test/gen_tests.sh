@@ -22,7 +22,7 @@ for i in $(seq 1 "${N}"); do
     # Random instruction count between 1 and max_length
     num_instructions=$(( (RANDOM % MAX_LENGTH) + 1 ))
     out_file="${OUT_DIR}/test_$(printf '%04d' "${i}").bin"
-    python3 "${SCRIPT_DIR}/fuzzer.py" -n "${num_instructions}" -o "${out_file}"
+    python3 "${SCRIPT_DIR}/gen_tests.py" -n "${num_instructions}" -o "${out_file}"
 done
 
 echo "Generated ${N} files in ${OUT_DIR}"

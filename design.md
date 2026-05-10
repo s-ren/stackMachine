@@ -1,25 +1,27 @@
 # Stack machine design
 Compilation: bytecode -> StackIR -> LLVM -> X86.
 
-StackIR:
+## Stack IR
 ```
 instruction = STOP | LOAD i | STORE i | POP | ADD | SUB | DUP
 op = (instruction, p)
 STACK_SIZE
 ```
-We perform safety checking and analyze out-of-bounds behavior for this IR.
 
-After analyzing the entire program, each node is decorated with ``p``,
-which is the stack height at the time the instruction is executed.
+### Static analysis
+All control flow in this language are static, so stack underbound errors can be detected at compile time.
+
+Our static pass decorates each node with the stack height ``p``.
 
 ``STACK_SIZE`` is set to the maximum of ``p`` after the IR pass,
 and it is used as a metavariable for LLVM lowering.
 
-Lowering from StackIR to LLVM:
+### Lowering to LLVM
 ```
 Initialization:
 %stack = alloca [STACK_SIZE x i256]
-
+%in is input pointer
+%out is output pointer
 
 STOP, p -> 
 ret void;

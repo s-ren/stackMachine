@@ -2,6 +2,7 @@
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/MLIRContext.h"
 #include "llvm/Support/raw_ostream.h"
+#include "mlir/registerBuiltinDialectTranslation.h"
 
 // project includes
 #include "parser/parser.h"
@@ -10,6 +11,7 @@
 // include standard library headers
 #include <iostream>
 #include <fstream>
+#include <llvm-18/llvm/ADT/StringRef.h>
 #include <stdexcept>
 #include <vector>
 #include "include/CLI11.hpp"
@@ -36,6 +38,50 @@ std::vector<uint8_t> parse_cmdline(const string &hex_str) {
     }
     return result;
 }
+
+// Helper function to dump LLVM IR.
+static int dumpLLVMIR(mlir::ModuleOp module) {
+  // Register the translation to LLVM IR with the MLIR context.
+  mlir::registerBuiltinDialectTranslation(*module->getContext());
+  mlir::registerLLVMDialectTranslation(*module->getContext());
+
+  // Convert the module to LLVM IR in a new LLVM IR context.
+  llvm::LLVMContext llvmContext;
+  auto llvmModule = mlir::translateModuleToLLVMIR(module, llvmContext);
+  if (!llvmModule) {
+    llvm::errs() << "Failed to emit LLVM IR\n";
+    return -1;
+  }
+
+  // Initialize LLVM targets.
+  llvm::InitializeNativeTarget();
+  llvm::InitializeNativeTargetAsmPrinter();
+
+  // Configure the LLVM Module
+  auto tmBuilderOrError = llvm::orc::JITTargetMachineBuilder::detectHost();
+  if (!tmBuilderOrError) {
+    llvm::errs() << "Could not create JITTargetMachineBuilder\n";
+    return -1;
+  }
+
+  auto tmOrError = tmBuilderOrError->createTargetMachine();
+  if (!tmOrError) {
+    llvm::errs() << "Could not create TargetMachine\n";
+    return -1;
+  }
+  mlir::ExecutionEngine::setupTargetTripleAndDataLayout(llvmModule.get(),
+                                                        tmOrError.get().get());
+
+  /// Optionally run an optimization pipeline over the llvm module.
+  auto optPipeline = mlir::makeOptimizingTransformer(/*optLevel=*/3, /*sizeLevel=*/0,/*targetMachine=*/nullptr);
+  if (auto err = optPipeline(llvmModule.get())) {
+    llvm::errs() << "Failed to optimize LLVM IR " << err << "\n";
+    return -1;
+  }
+  llvm::errs() << *llvmModule << "\n";
+  return 0;
+}
+
 
 int main(int argc, char *argv[]) {
     CLI::App app{"Stack Compiler"};
@@ -70,7 +116,7 @@ int main(int argc, char *argv[]) {
     }
 
     // parse the input file to generate the IR
-    std::cout << "Parsing..." << std::endl;
+    std::cout << "Generating StackIR..."<< std::endl;
     mlir::MLIRContext context;
     mlir::ModuleOp stackIR_module = parser::parse(context, input);
 
@@ -79,8 +125,33 @@ int main(int argc, char *argv[]) {
     llvm::outs() << "\n";
 
     // compile IR into binary
-    std::cout << "Lowering..." << std::endl;
-    mlir::ModuleOp llvm_module = lower::lower(context, stackIR_module);
+    std::cout << "Generating LLVMIR..." << std::endl;
+    lower::Lowerer lowerer(context);
+    mlir::ModuleOp llvm_module = lowerer.lower(stackIR_module);
+
+    // print the lowered LLVM dialect module
+    llvm_module.print(llvm::outs());
+    llvm::outs() << "\n";
+
+    // lower to LLVM
+    std::cout << "Generating actual LLVM..." << std::endl;
+    dumpLLVMIR(llvm_module);
+
+  // Convert the module to LLVM IR in a new LLVM IR context.
+  llvm::LLVMContext llvmContext;
+  auto llvmModule = mlir::translateModuleToLLVMIR(module, llvmContext);
+  if (!llvmModule) {
+    llvm::errs() << "Failed to emit LLVM IR\n";
+    return -1;
+  }
+
+
+
+    if (!llvm_ir) {
+        throw std::runtime_error("Failed to translate MLIR module to LLVM IR");
+    }
+
+    // optimize and emit object code
 
     // write to output file
     if (!target_file_name.empty()) {

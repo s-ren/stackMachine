@@ -4,7 +4,7 @@
 #include <ios>
 #include <memory>
 
-extern void f(unsigned char* in, unsigned char* out);
+extern "C" void f(unsigned char* in, unsigned char* out);
 
 int main(int const argc, char const *argv[])
 {

@@ -66,6 +66,11 @@ file(GLOB_RECURSE STACK_SOURCES ${CMAKE_SOURCE_DIR}/src/*.cpp)
 add_executable(stack ${STACK_SOURCES})
 add_dependencies(stack StackIRIncGen)
 
+target_compile_definitions(stack PRIVATE
+  STACK_HOST_CXX="${CMAKE_CXX_COMPILER}"
+  STACK_WRAPPER_SOURCE="${CMAKE_SOURCE_DIR}/wrapper/wrapper.cpp"
+)
+
 target_include_directories(stack PRIVATE
   ${MLIR_INCLUDE_DIRS}
   ${LLVM_INCLUDE_DIRS}
@@ -79,4 +84,7 @@ target_link_libraries(stack PRIVATE
   MLIRParser
   MLIRSupport
   MLIRLLVMDialect
+  MLIRTargetLLVMIRExport
+  MLIRLLVMToLLVMIRTranslation
+  MLIRBuiltinToLLVMIRTranslation
 )

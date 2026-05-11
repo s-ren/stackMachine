@@ -65,6 +65,7 @@ file(GLOB_RECURSE STACK_SOURCES ${CMAKE_SOURCE_DIR}/src/*.cpp)
 
 add_executable(stack ${STACK_SOURCES})
 add_dependencies(stack StackIRIncGen)
+set_target_properties(stack PROPERTIES OUTPUT_NAME stackc)
 
 target_compile_definitions(stack PRIVATE
   STACK_HOST_CXX="${CMAKE_CXX_COMPILER}"

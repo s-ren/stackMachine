@@ -1,8 +1,9 @@
 # Build directory
 build/
 
-# Test subdirectories (generated test cases)
-test/*/
+# Generated test artifacts
+test/e2e/out/
+test/fuzz/corpus/
 
 # Compiled output
 bin/

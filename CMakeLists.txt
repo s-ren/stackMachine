@@ -89,3 +89,6 @@ target_link_libraries(stack PRIVATE
   MLIRLLVMToLLVMIRTranslation
   MLIRBuiltinToLLVMIRTranslation
 )
+
+enable_testing()
+add_subdirectory(test)

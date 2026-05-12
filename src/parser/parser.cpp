@@ -35,6 +35,7 @@ mlir::ModuleOp parse(mlir::MLIRContext &context, std::vector<uint8_t> code) {
     auto stack_ptr = 0;
     auto stack_size = 0;
 
+    bool stop = false;
     for (size_t i = 0; i < code.size(); i++) {
         uint8_t operation = code[i];
         uint8_t argument = 0;
@@ -42,10 +43,12 @@ mlir::ModuleOp parse(mlir::MLIRContext &context, std::vector<uint8_t> code) {
         auto loc = mlir::FileLineColLoc::get(&context, "", 0, i);
         // create attribute for current stack pointer value
         mlir::IntegerAttr stack_ptr_attr = builder.getIntegerAttr(i8, stack_ptr);
+
         switch (operation) {
             case 0x00: // STOP
                 // create a (STOP, stack_ptr)
                 builder.create<mlir::stackIR::StopOp>(loc, stack_ptr_attr);
+                stop = true;
                 break;
 
             case 0x01: { // LOAD
@@ -118,7 +121,11 @@ mlir::ModuleOp parse(mlir::MLIRContext &context, std::vector<uint8_t> code) {
         }
         if (stack_ptr > stack_size)
             stack_size = stack_ptr;
+        if (stop)
+            break;
     }
+    if (!stop)
+        throw std::runtime_error("No STOP opcode found in bytecode.");
     // set the stack size attribute on the module
     module->setAttr("stackIR.stack_size", builder.getI32IntegerAttr(stack_size));
 

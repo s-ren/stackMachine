@@ -24,3 +24,6 @@ src/ir/*.inc
 *.swp
 *.swo
 .vscode/
+
+# python cache
+**/__pycache__/

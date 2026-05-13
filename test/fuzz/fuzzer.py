@@ -126,7 +126,7 @@ def generate_random_bytecode(num_instructions=100, max_index=255):
 def write_input_file(path: Path, words) -> None:
     payload = bytearray()
     for value in words:
-        payload.extend(mask_word(value).to_bytes(WORD_BYTES, byteorder="little", signed=False))
+        payload.extend(mask_word(value).to_bytes(WORD_BYTES, byteorder="big", signed=False))
     path.write_bytes(payload)
 
 
@@ -138,7 +138,7 @@ def decode_words(path: Path, count: int) -> list:
 
     decoded = []
     for index in range(0, len(data), WORD_BYTES):
-        decoded.append(int.from_bytes(data[index:index + WORD_BYTES], byteorder="little", signed=False))
+        decoded.append(int.from_bytes(data[index:index + WORD_BYTES], byteorder="big", signed=False))
     return decoded
 
 
@@ -166,7 +166,7 @@ def evaluate_case(case_dir: Path, bytecode: bytes, in_words) -> tuple[bool, str]
     input_path = case_dir / "in.bin"
     output_path = case_dir / "out"
     output_base = case_dir / "program"
-    executable_path = output_base.with_suffix(".exe" if sys.platform == "win32" else ".out")
+    executable_path = output_base.with_suffix(".out")
 
     # write program to file
     program_path.write_bytes(bytecode)
@@ -227,26 +227,27 @@ def evaluate_case(case_dir: Path, bytecode: bytes, in_words) -> tuple[bool, str]
 
 
 if __name__ == "__main__":
+    print(f"Running fuzzer with {NUM_TEST_CASES} test cases, each with up to {NUM_INSTRUCTIONS} instructions.")
     # check stackc exists before doing any work
     if not STACKC_PATH.is_file():
         print(f"error: stackc not found at {STACKC_PATH}", file=sys.stderr)
         raise SystemExit(2)
 
     # set up testing directories
-    random.seed(RANDOM_SEED)
+    #random.seed(RANDOM_SEED)
     prepare_corpus_dir(CORPUS_DIR)
 
     summaries = []
     all_passed = True
-    input_words = list(range(INPUT_WORDS))
 
     for case_index in range(NUM_TEST_CASES):
         if case_index % 50 == 0:
-            print(case_index)
+            print(f"Running test case {case_index}")
         case_dir = CORPUS_DIR / f"case-{case_index:04d}"
         case_dir.mkdir(parents=True, exist_ok=True)
-        # generate test case
+        # generate bytecode and input 
         test_case = generate_random_bytecode(NUM_INSTRUCTIONS, 255)
+        input_words = [random.getrandbits(WORD_BYTES * 8) for _ in range(INPUT_WORDS)]
         # evaluate
         accepted, reason = evaluate_case(case_dir, test_case, input_words)
         #status = "PASS" if accepted else "FAIL"

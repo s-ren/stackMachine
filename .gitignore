@@ -4,6 +4,8 @@ build/
 # Generated test artifacts
 test/e2e/out/
 test/fuzz/corpus/
+test/parser/*/
+!test/parser/cases/
 
 # Compiled output
 bin/

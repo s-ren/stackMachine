@@ -1,4 +1,6 @@
 #pragma once
+#include <cstdint>
+
 #include "mlir/Dialect/LLVMIR/LLVMTypes.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/BuiltinOps.h"
@@ -18,11 +20,12 @@ private:
     mlir::OpBuilder              builder;
     mlir::Location               loc;
     mlir::IntegerType            i8;
+    mlir::IntegerType            i64;
     mlir::IntegerType            i256;
     mlir::LLVM::LLVMPointerType  ptr;
     mlir::LLVM::LLVMVoidType     voidT;
 
-    mlir::Value ci8(int8_t v);
+    mlir::Value ci64(uint64_t v);
     mlir::Value gep256(mlir::Value base, mlir::Value idx);
     mlir::Value load(mlir::Value pointer);
     void        store(mlir::Value value, mlir::Value pointer);

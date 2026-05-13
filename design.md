@@ -95,3 +95,5 @@ store i256 %val, ptr %stack_ptr
 
 ``out`` points to the start of output file.
 
+## Changes
+Updated the wrapper output file size to 256

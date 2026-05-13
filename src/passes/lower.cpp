@@ -24,6 +24,7 @@ Lowerer::Lowerer(mlir::MLIRContext &context)
       builder(&context),
       loc(mlir::UnknownLoc::get(&context)),
       i8(mlir::IntegerType::get(&context, 8)),
+    i64(mlir::IntegerType::get(&context, 64)),
       i256(mlir::IntegerType::get(&context, 256)),
       ptr(mlir::LLVM::LLVMPointerType::get(&context)),
       voidT(mlir::LLVM::LLVMVoidType::get(&context))
@@ -46,13 +47,13 @@ void Lowerer::ret() {
     builder.create<mlir::LLVM::ReturnOp>(loc, mlir::ValueRange{});
 }
 
-// Creates [i8 v]
-mlir::Value Lowerer::ci8(int8_t v) {
+// Creates [i64 v]
+mlir::Value Lowerer::ci64(uint64_t v) {
     return builder.create<mlir::LLVM::ConstantOp>(
-        loc, i8, builder.getI8IntegerAttr(v));
+        loc, i64, builder.getIntegerAttr(i64, v));
 }
 
-// Creates [getelementptr i256, ptr %base, i8 %idx]
+// Creates [getelementptr i256, ptr %base, i64 %idx]
 mlir::Value Lowerer::gep256(mlir::Value base, mlir::Value idx) {
     return builder.create<mlir::LLVM::GEPOp>(
         loc, ptr, i256, base, mlir::ValueRange{idx});
@@ -61,9 +62,8 @@ mlir::Value Lowerer::gep256(mlir::Value base, mlir::Value idx) {
 // lowering pass
 mlir::ModuleOp Lowerer::lower(mlir::ModuleOp stackIR_module) {
     // read stack size from module attribute
-    int8_t stack_size = static_cast<int8_t>(
-        mlir::cast<mlir::IntegerAttr>(
-            stackIR_module->getAttr("stackIR.stack_size")).getInt());
+    uint64_t stack_size = mlir::cast<mlir::IntegerAttr>(
+        stackIR_module->getAttr("stackIR.stack_size")).getValue().getZExtValue();
 
     // create llvm module
     auto llvm_module = mlir::ModuleOp::create(loc);
@@ -79,8 +79,8 @@ mlir::ModuleOp Lowerer::lower(mlir::ModuleOp stackIR_module) {
     mlir::Value in  = entry->getArgument(0);
     mlir::Value out = entry->getArgument(1);
 
-    // create [alloca i256, i8 stack_size]
-    mlir::Value stack = builder.create<mlir::LLVM::AllocaOp>(loc, ptr, i256, ci8(stack_size));
+    // create [alloca i256, i64 stack_size]
+    mlir::Value stack = builder.create<mlir::LLVM::AllocaOp>(loc, ptr, i256, ci64(stack_size));
         
     // lower each StackIR op to LLVM dialect ops
     for (auto &op : stackIR_module.getBodyRegion().front().getOperations()) {
@@ -91,28 +91,28 @@ mlir::ModuleOp Lowerer::lower(mlir::ModuleOp stackIR_module) {
             ret();
 
         } else if (opName == "stackIR.load") {
-            int8_t i = static_cast<int8_t>(mlir::cast<mlir::IntegerAttr>(op.getAttr("index")).getInt());
-            int8_t p = static_cast<int8_t>(mlir::cast<mlir::IntegerAttr>(op.getAttr("stack_ptr")).getInt());
+            uint64_t i = mlir::cast<mlir::IntegerAttr>(op.getAttr("index")).getValue().getZExtValue();
+            uint64_t p = mlir::cast<mlir::IntegerAttr>(op.getAttr("stack_ptr")).getValue().getZExtValue();
             // LOAD i, p ->
-            // %in_ptr = getelementptr i256, ptr %in, i8 i
-            auto in_ptr    = gep256(in, ci8(i));
+            // %in_ptr = getelementptr i256, ptr %in, i64 i
+            auto in_ptr    = gep256(in, ci64(i));
             // %val = load i256, ptr %in_ptr
             auto val       = load(in_ptr);
-            // %stack_ptr = getelementptr i256, ptr %stack, i8 p
-            auto stack_ptr = gep256(stack, ci8(p));
+            // %stack_ptr = getelementptr i256, ptr %stack, i64 p
+            auto stack_ptr = gep256(stack, ci64(p));
             // store i256 %val, ptr %stack_ptr
             store(val, stack_ptr);
 
         } else if (opName == "stackIR.store") {
-            int8_t i = static_cast<int8_t>(mlir::cast<mlir::IntegerAttr>(op.getAttr("index")).getInt());
-            int8_t p = static_cast<int8_t>(mlir::cast<mlir::IntegerAttr>(op.getAttr("stack_ptr")).getInt());
+            uint64_t i = mlir::cast<mlir::IntegerAttr>(op.getAttr("index")).getValue().getZExtValue();
+            uint64_t p = mlir::cast<mlir::IntegerAttr>(op.getAttr("stack_ptr")).getValue().getZExtValue();
             // STORE i, p ->
-            // %stack_ptr = getelementptr i256, ptr %stack, i8 (p-1)
-            auto stack_ptr = gep256(stack, ci8(p - 1));
+            // %stack_ptr = getelementptr i256, ptr %stack, i64 (p-1)
+            auto stack_ptr = gep256(stack, ci64(p - 1));
             // %val = load i256, ptr %stack_ptr
             auto val       = load(stack_ptr);
-            // %out_ptr = getelementptr i256, ptr %out, i8 i
-            auto out_ptr   = gep256(out, ci8(i));
+            // %out_ptr = getelementptr i256, ptr %out, i64 i
+            auto out_ptr   = gep256(out, ci64(i));
             // store i256 %val, ptr %out_ptr
             store(val, out_ptr);
 
@@ -121,50 +121,50 @@ mlir::ModuleOp Lowerer::lower(mlir::ModuleOp stackIR_module) {
             // noop
 
         } else if (opName == "stackIR.add") {
-            int8_t p = static_cast<int8_t>(mlir::cast<mlir::IntegerAttr>(op.getAttr("stack_ptr")).getInt());
+            uint64_t p = mlir::cast<mlir::IntegerAttr>(op.getAttr("stack_ptr")).getValue().getZExtValue();
             // ADD, p ->
-            // %stack_ptr_1 = getelementptr i256, ptr %stack, i8 (p-2)
-            auto stack_ptr_1 = gep256(stack, ci8(p - 2));
+            // %stack_ptr_1 = getelementptr i256, ptr %stack, i64 (p-2)
+            auto stack_ptr_1 = gep256(stack, ci64(p - 2));
             // %val1 = load i256, ptr %stack_ptr_1
             auto val1        = load(stack_ptr_1);
-            // %stack_ptr_2 = getelementptr i256, ptr %stack, i8 (p-1)
-            auto stack_ptr_2 = gep256(stack, ci8(p - 1));
+            // %stack_ptr_2 = getelementptr i256, ptr %stack, i64 (p-1)
+            auto stack_ptr_2 = gep256(stack, ci64(p - 1));
             // %val2 = load i256, ptr %stack_ptr_2
             auto val2        = load(stack_ptr_2);
             // %val = add i256 %val1, %val2
             auto val         = builder.create<mlir::LLVM::AddOp>(loc, i256, val1, val2);
-            // %stack_ptr = getelementptr i256, ptr %stack, i8 (p-2)
-            auto stack_ptr   = gep256(stack, ci8(p - 2));
+            // %stack_ptr = getelementptr i256, ptr %stack, i64 (p-2)
+            auto stack_ptr   = gep256(stack, ci64(p - 2));
             // store i256 %val, ptr %stack_ptr
             store(val, stack_ptr);
 
         } else if (opName == "stackIR.sub") {
-            int8_t p = static_cast<int8_t>(mlir::cast<mlir::IntegerAttr>(op.getAttr("stack_ptr")).getInt());
+            uint64_t p = mlir::cast<mlir::IntegerAttr>(op.getAttr("stack_ptr")).getValue().getZExtValue();
             // SUB, p ->
-            // %stack_ptr_1 = getelementptr i256, ptr %stack, i8 (p-1)
-            auto stack_ptr_1 = gep256(stack, ci8(p - 1));
+            // %stack_ptr_1 = getelementptr i256, ptr %stack, i64 (p-1)
+            auto stack_ptr_1 = gep256(stack, ci64(p - 1));
             // %val1 = load i256, ptr %stack_ptr_1
             auto val1        = load(stack_ptr_1);
-            // %stack_ptr_2 = getelementptr i256, ptr %stack, i8 (p-2)
-            auto stack_ptr_2 = gep256(stack, ci8(p - 2));
+            // %stack_ptr_2 = getelementptr i256, ptr %stack, i64 (p-2)
+            auto stack_ptr_2 = gep256(stack, ci64(p - 2));
             // %val2 = load i256, ptr %stack_ptr_2
             auto val2        = load(stack_ptr_2);
             // %val = sub i256 %val1, %val2
             auto val         = builder.create<mlir::LLVM::SubOp>(loc, i256, val1, val2);
-            // %stack_ptr = getelementptr i256, ptr %stack, i8 (p-2)
-            auto stack_ptr   = gep256(stack, ci8(p - 2));
+            // %stack_ptr = getelementptr i256, ptr %stack, i64 (p-2)
+            auto stack_ptr   = gep256(stack, ci64(p - 2));
             // store i256 %val, ptr %stack_ptr
             store(val, stack_ptr);
 
         } else if (opName == "stackIR.dup") {
-            int8_t p = static_cast<int8_t>(mlir::cast<mlir::IntegerAttr>(op.getAttr("stack_ptr")).getInt());
+            uint64_t p = mlir::cast<mlir::IntegerAttr>(op.getAttr("stack_ptr")).getValue().getZExtValue();
             // DUP, p ->
-            // %stack_ptr = getelementptr i256, ptr %stack, i8 (p-1)
-            auto stack_ptr_src = gep256(stack, ci8(p - 1));
+            // %stack_ptr = getelementptr i256, ptr %stack, i64 (p-1)
+            auto stack_ptr_src = gep256(stack, ci64(p - 1));
             // %val = load i256, ptr %stack_ptr
             auto val           = load(stack_ptr_src);
-            // %stack_ptr = getelementptr i256, ptr %stack, i8 p
-            auto stack_ptr_dst = gep256(stack, ci8(p));
+            // %stack_ptr = getelementptr i256, ptr %stack, i64 p
+            auto stack_ptr_dst = gep256(stack, ci64(p));
             // store i256 %val, ptr %stack_ptr
             store(val, stack_ptr_dst);
         }

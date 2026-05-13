@@ -44,7 +44,6 @@ def summarize_case(binary_path: Path, passed: bool) -> str:
 
 
 def run_case(driver_path: Path, binary_path: Path, expected_path: Path) -> bool:
-    print(f"TEST {binary_path}")
     try:
         proc = subprocess.run(
             [str(driver_path), str(binary_path)],
@@ -59,7 +58,6 @@ def run_case(driver_path: Path, binary_path: Path, expected_path: Path) -> bool:
     expected = normalize_text(expected_path.read_text())
     if expected.strip() == "FAIL":
         if proc.returncode != 0:
-            print(f"PASS {binary_path.stem}")
             return True
 
         print(f"FAIL {binary_path.stem}: expected compiler failure", file=sys.stderr)
@@ -86,7 +84,6 @@ def run_case(driver_path: Path, binary_path: Path, expected_path: Path) -> bool:
             print(proc.stderr, file=sys.stderr, end="" if proc.stderr.endswith("\n") else "\n")
         return False
 
-    print(f"PASS {binary_path.stem}")
     return True
 
 

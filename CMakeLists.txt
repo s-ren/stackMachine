@@ -18,6 +18,10 @@ include(TableGen)
 include(AddLLVM)
 include(AddMLIR)
 
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+
+set(STACK_FUZZ_RUNNER ${CMAKE_SOURCE_DIR}/test/fuzz/fuzzer.py)
+
 # Locate mlir-tblgen
 find_program(MLIR_TBLGEN_EXE mlir-tblgen
   HINTS ${LLVM_TOOLS_BINARY_DIR}
@@ -88,6 +92,12 @@ target_link_libraries(stack PRIVATE
   MLIRTargetLLVMIRExport
   MLIRLLVMToLLVMIRTranslation
   MLIRBuiltinToLLVMIRTranslation
+)
+
+add_custom_command(TARGET stack POST_BUILD
+  COMMAND ${Python3_EXECUTABLE} ${STACK_FUZZ_RUNNER}
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  USES_TERMINAL
 )
 
 enable_testing()

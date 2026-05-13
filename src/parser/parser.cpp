@@ -67,13 +67,13 @@ mlir::ModuleOp parse(mlir::MLIRContext &context, std::vector<uint8_t> code) {
                 // fail if STORE is called when stack pointer is at 0 (stack underflow)
                 if (stack_ptr <= 0)
                     throw std::runtime_error("Stack underflow at bytecode offset " + std::to_string(i) + ", STORE.");
-                // fail if it stores to beyond 64
-                if (argument >= 64)
-                    throw std::runtime_error("Invalid store index " + std::to_string(argument) + " at bytecode offset " + std::to_string(i) + ", STORE. Valid range is 0-63.");
                 // read argument byte for STORE opcode
                 if (i + 1 >= code.size())
                     throw std::runtime_error("Expected argument for STORE at position " + std::to_string(i) + ", STORE.");
                 argument = code[++i];
+                // fail if it stores beyond the 64-word output buffer
+                if (argument >= 64)
+                    throw std::runtime_error("Invalid store index " + std::to_string(argument) + " at bytecode offset " + std::to_string(i - 1) + ", STORE. Valid range is 0-63.");
                 // create a (STORE, index, stack_ptr)
                 mlir::IntegerAttr store_index_attr = builder.getIntegerAttr(i8, argument);
                 builder.create<mlir::stackIR::StoreOp>(loc, store_index_attr, stack_ptr_attr);

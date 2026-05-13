@@ -1,5 +1,14 @@
 # Stack machine design
-Compilation: bytecode -> StackIR -> LLVM -> X86.
+
+A simple compiler from stack machine to x86.
+
+High level compilation process: bytecode -> StackIR -> LLVM -> X86.
+
+## Stack Machine
+Code:
+```
+00: STOP; 01 i: LOAD i; 02 i: STORE i; 03: POP; 04: ADD; 05: SUB; 06: DUP
+```
 
 ## Stack IR
 ```
@@ -97,3 +106,14 @@ store i256 %val, ptr %stack_ptr
 
 ### Enforcing big endian 
 To ensure big endian format, the wrapper preprocess and post process the input and output.
+It turns the input into machine endian before processing.
+
+# Build and run
+To build:
+```
+bash build.sh
+```
+To run:
+```
+./bin/stackc --help
+```

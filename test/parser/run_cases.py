@@ -8,7 +8,6 @@ import sys
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-DRIVER_PATH = SCRIPT_DIR / "stack-parser-driver"
 CASES_DIR = SCRIPT_DIR / "cases"
 RESULT_PATH = SCRIPT_DIR / "result.txt"
 
@@ -88,6 +87,10 @@ def run_case(driver_path: Path, binary_path: Path, expected_path: Path) -> bool:
 
 
 def main() -> int:
+    driver_path = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else SCRIPT_DIR / "stack-parser-driver"
+    if not driver_path.is_file():
+        raise FileNotFoundError(f"stack parser driver not found: {driver_path}")
+
     # collect all test cases
     cases = collect_cases(CASES_DIR)
     ok = True
@@ -95,7 +98,7 @@ def main() -> int:
     try:
         for binary_path, expected_path in cases:
             # run the case
-            passed = run_case(DRIVER_PATH, binary_path, expected_path)
+            passed = run_case(driver_path, binary_path, expected_path)
             # write to summary
             summaries.append(summarize_case(binary_path, passed))
             write_results(RESULT_PATH, summaries)

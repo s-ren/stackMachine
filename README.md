@@ -108,12 +108,41 @@ store i256 %val, ptr %stack_ptr
 To ensure big endian format, the wrapper preprocess and post process the input and output.
 It turns the input into machine endian before processing.
 
+### Error Handling
+The compiled runtime does not exhibit undefined behavior and does not fail at runtime.
+All mal-formed bytecode that causes stack underflow are caught at compile time.
+
 # Build and run
-To build:
+## Build
 ```
-bash build.sh
+cmake -S . -B build
+cmake --build build
+ctest --test-dir build --output-on-failure
 ```
-To run:
+
+If CMake cannot find MLIR automatically, point it at your installation with one of:
+```
+cmake -S . -B build -DMLIR_DIR=/path/to/lib/cmake/mlir
+cmake -S . -B build -DLLVM_DIR=/path/to/lib/cmake/llvm
+cmake -S . -B build -DCMAKE_PREFIX_PATH=/path/to/llvm-install-prefix
+```
+
+`build.sh` runs the same generator-agnostic commands and then executes the CTest suite.
+
+## Run
 ```
 ./bin/stackc --help
 ```
+
+# Testing
+
+Testing is registered with CTest.
+
+`build.sh` runs both:
+```
+stack-parser-cases
+stack-fuzz
+```
+
+The fuzzing script generates random test cases, runs them through the interpreter, and compares the results against the compiled output.
+Programs that trigger runtime exceptions in the interpreter are expected to fail compilation.

@@ -30,7 +30,6 @@ OPCODE_NAMES = {
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent.parent
-STACKC_PATH = REPO_ROOT / "bin" / "stackc"
 CORPUS_DIR = SCRIPT_DIR / "corpus"
 NUM_TEST_CASES = 300
 NUM_INSTRUCTIONS = 300
@@ -160,7 +159,7 @@ def prepare_corpus_dir(corpus_dir: Path) -> None:
     corpus_dir.mkdir(parents=True, exist_ok=True)
 
 
-def evaluate_case(case_dir: Path, bytecode: bytes, in_words) -> tuple[bool, str]:
+def evaluate_case(stackc_path: Path, case_dir: Path, bytecode: bytes, in_words) -> tuple[bool, str]:
     # prepare file path
     program_path = case_dir / "program.bin"
     input_path = case_dir / "in.bin"
@@ -185,7 +184,7 @@ def evaluate_case(case_dir: Path, bytecode: bytes, in_words) -> tuple[bool, str]
 
     # compile stackc 
     compile_proc = subprocess.run(
-        [str(STACKC_PATH), "-i", str(program_path), "-o", str(output_base)],
+        [str(stackc_path), "-i", str(program_path), "-o", str(output_base)],
         capture_output=True,
         text=True,
         check=False,
@@ -227,10 +226,11 @@ def evaluate_case(case_dir: Path, bytecode: bytes, in_words) -> tuple[bool, str]
 
 
 if __name__ == "__main__":
+    stackc_path = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else REPO_ROOT / "bin" / "stackc"
     print(f"Running fuzzer with {NUM_TEST_CASES} test cases, each with up to {NUM_INSTRUCTIONS} instructions.")
     # check stackc exists before doing any work
-    if not STACKC_PATH.is_file():
-        print(f"error: stackc not found at {STACKC_PATH}", file=sys.stderr)
+    if not stackc_path.is_file():
+        print(f"error: stackc not found at {stackc_path}", file=sys.stderr)
         raise SystemExit(2)
 
     # set up testing directories
@@ -249,7 +249,7 @@ if __name__ == "__main__":
         test_case = generate_random_bytecode(NUM_INSTRUCTIONS, 255)
         input_words = [random.getrandbits(WORD_BYTES * 8) for _ in range(INPUT_WORDS)]
         # evaluate
-        accepted, reason = evaluate_case(case_dir, test_case, input_words)
+        accepted, reason = evaluate_case(stackc_path, case_dir, test_case, input_words)
         #status = "PASS" if accepted else "FAIL"
         if not accepted:
             summary = f"FAIL: case-{case_index:04d}: {reason}\n{test_case.hex()}\n" 

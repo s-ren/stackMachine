@@ -122,7 +122,7 @@ cmake -S . -B build -DCMAKE_PREFIX_PATH="$(brew --prefix llvm)"
 
 Debian/Ubuntu:
 ```sh
-sudo apt-get install cmake python3 llvm-18-dev libmlir-18-dev mlir-18-tools
+sudo apt-get install cmake python3 llvm-22-dev libmlir-22-dev mlir-22-tools
 ```
 
 ## Build

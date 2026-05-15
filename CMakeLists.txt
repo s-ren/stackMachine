@@ -31,7 +31,7 @@ function(stack_missing_dependency dependency_name)
   elseif(UNIX)
     string(APPEND _stack_message
       "Debian/Ubuntu example:\n"
-      "  sudo apt-get install cmake python3 llvm-18-dev libmlir-18-dev mlir-18-tools\n"
+      "  sudo apt-get install cmake python3 llvm-22-dev libmlir-22-dev mlir-22-tools\n"
     )
   endif()
 
@@ -113,9 +113,25 @@ endif()
 set(STACK_FUZZ_RUNNER ${CMAKE_SOURCE_DIR}/test/fuzz/fuzzer.py)
 
 # Locate mlir-tblgen
-find_program(MLIR_TBLGEN_EXE mlir-tblgen
-  HINTS ${LLVM_TOOLS_BINARY_DIR})
-if(NOT MLIR_TBLGEN_EXE)
+set(_stack_mlir_tblgen_hints)
+if(LLVM_TOOLS_BINARY_DIR)
+  list(APPEND _stack_mlir_tblgen_hints ${LLVM_TOOLS_BINARY_DIR})
+endif()
+
+if(MLIR_DIR)
+  get_filename_component(_stack_mlir_cmake_parent "${MLIR_DIR}" DIRECTORY)
+  get_filename_component(_stack_mlir_lib_parent "${_stack_mlir_cmake_parent}" DIRECTORY)
+  if(EXISTS "${_stack_mlir_lib_parent}/bin")
+    list(APPEND _stack_mlir_tblgen_hints "${_stack_mlir_lib_parent}/bin")
+  endif()
+endif()
+
+list(REMOVE_DUPLICATES _stack_mlir_tblgen_hints)
+
+find_program(STACK_MLIR_TBLGEN_EXE NAMES mlir-tblgen
+  HINTS ${_stack_mlir_tblgen_hints}
+  NO_CACHE)
+if(NOT STACK_MLIR_TBLGEN_EXE)
   stack_missing_dependency("mlir-tblgen from the MLIR tools package")
 endif()
 
@@ -139,9 +155,9 @@ function(tablegen_output output_file)
   set(flags ${ARGN})
   add_custom_command(
     OUTPUT  ${INC_DIR}/${output_file}
-    COMMAND ${MLIR_TBLGEN_EXE} ${flags} ${TBLGEN_INCLUDES}
+    COMMAND ${STACK_MLIR_TBLGEN_EXE} ${flags} ${TBLGEN_INCLUDES}
             ${TD_FILE} --write-if-changed -o ${INC_DIR}/${output_file}
-    DEPENDS ${TD_FILE} ${MLIR_TBLGEN_EXE}
+    DEPENDS ${TD_FILE} ${STACK_MLIR_TBLGEN_EXE}
     COMMENT "TableGen: ${output_file}"
     VERBATIM
   )

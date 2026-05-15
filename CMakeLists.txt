@@ -5,6 +5,34 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
+function(stack_missing_dependency dependency_name)
+  set(_stack_message
+    "${dependency_name} was not found.\n"
+    "Install the required system packages, then rerun CMake.\n\n"
+    "CMake overrides:\n"
+    "  -DMLIR_DIR=/path/to/lib/cmake/mlir\n"
+    "  -DLLVM_DIR=/path/to/lib/cmake/llvm\n"
+    "  -DCMAKE_PREFIX_PATH=/path/to/llvm-install-prefix\n"
+    "  -DSTACK_MLIR_CMAKE_DIR=/path/to/lib/cmake/mlir\n"
+    "  -DSTACK_LLVM_CMAKE_DIR=/path/to/lib/cmake/llvm\n\n"
+  )
+
+  if(APPLE)
+    string(APPEND _stack_message
+      "macOS/Homebrew example:\n"
+      "  brew install llvm cmake python3\n"
+      "  cmake -S . -B build -DCMAKE_PREFIX_PATH=\"$(brew --prefix llvm)\"\n"
+    )
+  elseif(UNIX)
+    string(APPEND _stack_message
+      "Debian/Ubuntu example:\n"
+      "  sudo apt-get install cmake python3 llvm-18-dev libmlir-18-dev mlir-18-tools\n"
+    )
+  endif()
+
+  message(FATAL_ERROR "${_stack_message}")
+endfunction()
+
 # Find MLIR.
 set(STACK_MLIR_CMAKE_DIR "" CACHE PATH "Path to the directory containing MLIRConfig.cmake")
 set(STACK_LLVM_CMAKE_DIR "" CACHE PATH "Path to the directory containing LLVMConfig.cmake")
@@ -57,7 +85,10 @@ list(APPEND _stack_mlir_hints ${_stack_common_mlir_hints})
 
 list(REMOVE_DUPLICATES _stack_mlir_hints)
 
-find_package(MLIR REQUIRED CONFIG HINTS ${_stack_mlir_hints})
+find_package(MLIR QUIET CONFIG HINTS ${_stack_mlir_hints})
+if(NOT MLIR_FOUND)
+  stack_missing_dependency("MLIR development packages")
+endif()
 
 message(STATUS "Using MLIR in: ${MLIR_DIR}")
 message(STATUS "Using LLVM in: ${LLVM_DIR}")
@@ -69,14 +100,19 @@ include(TableGen)
 include(AddLLVM)
 include(AddMLIR)
 
-find_package(Python3 REQUIRED COMPONENTS Interpreter)
+find_package(Python3 QUIET COMPONENTS Interpreter)
+if(NOT Python3_Interpreter_FOUND)
+  stack_missing_dependency("Python 3")
+endif()
 
 set(STACK_FUZZ_RUNNER ${CMAKE_SOURCE_DIR}/test/fuzz/fuzzer.py)
 
 # Locate mlir-tblgen
 find_program(MLIR_TBLGEN_EXE mlir-tblgen
-  HINTS ${LLVM_TOOLS_BINARY_DIR}
-  REQUIRED)
+  HINTS ${LLVM_TOOLS_BINARY_DIR})
+if(NOT MLIR_TBLGEN_EXE)
+  stack_missing_dependency("mlir-tblgen from the MLIR tools package")
+endif()
 
 # ── TableGen ────────────────────────────────────────────────────────────────
 # Generated .inc files live in the build tree so out-of-source builds do not

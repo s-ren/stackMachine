@@ -127,7 +127,18 @@ cmake -S . -B build -DLLVM_DIR=/path/to/lib/cmake/llvm
 cmake -S . -B build -DCMAKE_PREFIX_PATH=/path/to/llvm-install-prefix
 ```
 
-`build.sh` runs the same generator-agnostic commands and then executes the CTest suite.
+`build.sh` intentionally stays simple. It does not try to install system packages; it only configures, builds, installs, and runs the CTest suite.
+
+macOS/Homebrew:
+```sh
+brew install llvm cmake python3
+cmake -S . -B build -DCMAKE_PREFIX_PATH="$(brew --prefix llvm)"
+```
+
+Debian/Ubuntu:
+```sh
+sudo apt-get install cmake python3 llvm-18-dev libmlir-18-dev mlir-18-tools
+```
 
 ## Run
 ```

@@ -25,5 +25,24 @@ src/ir/*.inc
 *.swo
 .vscode/
 
-# python cache
+# Python cache
 **/__pycache__/
+*.py[cod]
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+**/.DS_Store
+
+# CMake generated
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+CTestTestfile.cmake
+_CPack_Packages/
+*.cmake
+!CMakeLists.txt

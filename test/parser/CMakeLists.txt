@@ -21,8 +21,6 @@ target_include_directories(stack-parser-driver PRIVATE
 
 target_link_libraries(stack-parser-driver PRIVATE
   MLIRIR
-  MLIRParser
-  MLIRSupport
 )
 
 add_test(

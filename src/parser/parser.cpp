@@ -47,7 +47,7 @@ mlir::ModuleOp parse(mlir::MLIRContext &context, std::vector<uint8_t> code) {
         switch (operation) {
             case 0x00: // STOP
                 // create a (STOP, stack_ptr)
-                builder.create<mlir::stackIR::StopOp>(loc, stack_ptr_attr);
+                mlir::stackIR::StopOp::create(builder, loc, stack_ptr_attr);
                 stop = true;
                 break;
 
@@ -58,7 +58,7 @@ mlir::ModuleOp parse(mlir::MLIRContext &context, std::vector<uint8_t> code) {
                 argument = code[++i];
                 // create a (LOAD, index, stack_ptr)
                 mlir::IntegerAttr index_attr = builder.getIntegerAttr(i8, argument);
-                builder.create<mlir::stackIR::LoadOp>(loc, index_attr, stack_ptr_attr);
+                mlir::stackIR::LoadOp::create(builder, loc, index_attr, stack_ptr_attr);
                 stack_ptr++;
                 break;
             }
@@ -76,7 +76,7 @@ mlir::ModuleOp parse(mlir::MLIRContext &context, std::vector<uint8_t> code) {
                     throw std::runtime_error("Invalid store index " + std::to_string(argument) + " at bytecode offset " + std::to_string(i - 1) + ", STORE. Valid range is 0-63.");
                 // create a (STORE, index, stack_ptr)
                 mlir::IntegerAttr store_index_attr = builder.getIntegerAttr(i8, argument);
-                builder.create<mlir::stackIR::StoreOp>(loc, store_index_attr, stack_ptr_attr);
+                mlir::stackIR::StoreOp::create(builder, loc, store_index_attr, stack_ptr_attr);
                 break;
             }
 
@@ -85,7 +85,7 @@ mlir::ModuleOp parse(mlir::MLIRContext &context, std::vector<uint8_t> code) {
                 if (stack_ptr <= 0)
                     throw std::runtime_error("Stack underflow at bytecode offset " + std::to_string(i) + ", POP.");
                 // create a (POP, stack_ptr)
-                builder.create<mlir::stackIR::PopOp>(loc, stack_ptr_attr);
+                mlir::stackIR::PopOp::create(builder, loc, stack_ptr_attr);
                 stack_ptr--;
                 break;
 
@@ -94,7 +94,7 @@ mlir::ModuleOp parse(mlir::MLIRContext &context, std::vector<uint8_t> code) {
                 if (stack_ptr <= 1)
                     throw std::runtime_error("Stack underflow at bytecode offset " + std::to_string(i) + ", ADD.");
                 // create a (ADD, stack_ptr)
-                builder.create<mlir::stackIR::AddOp>(loc, stack_ptr_attr);
+                mlir::stackIR::AddOp::create(builder, loc, stack_ptr_attr);
                 stack_ptr--;
                 break;
 
@@ -103,7 +103,7 @@ mlir::ModuleOp parse(mlir::MLIRContext &context, std::vector<uint8_t> code) {
                 if (stack_ptr <= 1)
                     throw std::runtime_error("Stack underflow at bytecode offset " + std::to_string(i) + ", SUB.");
                 // create a (SUB, stack_ptr)
-                builder.create<mlir::stackIR::SubOp>(loc, stack_ptr_attr);
+                mlir::stackIR::SubOp::create(builder, loc, stack_ptr_attr);
                 stack_ptr--;
                 break;
 
@@ -112,7 +112,7 @@ mlir::ModuleOp parse(mlir::MLIRContext &context, std::vector<uint8_t> code) {
                 if (stack_ptr <= 0)
                     throw std::runtime_error("Stack underflow at bytecode offset " + std::to_string(i) + ", DUP.");
                 // create a (DUP, stack_ptr)
-                builder.create<mlir::stackIR::DupOp>(loc, stack_ptr_attr);
+                mlir::stackIR::DupOp::create(builder, loc, stack_ptr_attr);
                 stack_ptr++;
                 break;
 

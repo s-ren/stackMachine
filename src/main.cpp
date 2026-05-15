@@ -133,7 +133,7 @@ static void emitObjectCode(mlir::ModuleOp mlirModule,
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
 
-    std::string triple = llvm::sys::getDefaultTargetTriple();
+    llvm::Triple triple(llvm::sys::getDefaultTargetTriple());
     std::string error;
     const llvm::Target *target = llvm::TargetRegistry::lookupTarget(triple, error);
     if (!target)

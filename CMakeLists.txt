@@ -1,9 +1,14 @@
+
 cmake_minimum_required(VERSION 3.20)
-project(stack LANGUAGES CXX)
+project(stack LANGUAGES C CXX)
+
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+
+# Minimal install target to avoid errors on macOS
+install(CODE "message(STATUS \"No install steps defined.\")")
 
 function(stack_missing_dependency dependency_name)
   set(_stack_message
@@ -177,11 +182,6 @@ target_include_directories(stack PRIVATE
 )
 
 target_link_libraries(stack PRIVATE
-  MLIRIR
-  MLIRParser
-  MLIRSupport
-  MLIRLLVMDialect
-  MLIRTargetLLVMIRExport
   MLIRLLVMToLLVMIRTranslation
   MLIRBuiltinToLLVMIRTranslation
 )

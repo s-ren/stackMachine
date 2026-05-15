@@ -34,28 +34,28 @@ Lowerer::Lowerer(mlir::MLIRContext &context)
 // ── Private helpers ───────────────────────────────────────────────────────────
 // Creates [load i256, ptr %pointer]
 mlir::Value Lowerer::load(mlir::Value pointer) {
-    return builder.create<mlir::LLVM::LoadOp>(loc, i256, pointer);
+    return mlir::LLVM::LoadOp::create(builder, loc, i256, pointer);
 }
 
 // Creates [store i256 %value, ptr %pointer]
 void Lowerer::store(mlir::Value value, mlir::Value pointer) {
-    builder.create<mlir::LLVM::StoreOp>(loc, value, pointer);
+    mlir::LLVM::StoreOp::create(builder, loc, value, pointer);
 }
 
 // Creates [ret void]
 void Lowerer::ret() {
-    builder.create<mlir::LLVM::ReturnOp>(loc, mlir::ValueRange{});
+    mlir::LLVM::ReturnOp::create(builder, loc, mlir::ValueRange{});
 }
 
 // Creates [i64 v]
 mlir::Value Lowerer::ci64(uint64_t v) {
-    return builder.create<mlir::LLVM::ConstantOp>(
+    return mlir::LLVM::ConstantOp::create(builder,
         loc, i64, builder.getIntegerAttr(i64, v));
 }
 
 // Creates [getelementptr i256, ptr %base, i64 %idx]
 mlir::Value Lowerer::gep256(mlir::Value base, mlir::Value idx) {
-    return builder.create<mlir::LLVM::GEPOp>(
+    return mlir::LLVM::GEPOp::create(builder,
         loc, ptr, i256, base, mlir::ValueRange{idx});
 }
 
@@ -71,16 +71,16 @@ mlir::ModuleOp Lowerer::lower(mlir::ModuleOp stackIR_module) {
 
     // create function definition: void f(i8* in, i8* out)
     auto funcType = mlir::LLVM::LLVMFunctionType::get(voidT, {ptr, ptr});
-    auto func = builder.create<mlir::LLVM::LLVMFuncOp>(loc, "f", funcType);
+    auto func = mlir::LLVM::LLVMFuncOp::create(builder, loc, "f", funcType);
     
     // create entry block for the function and set insertion point
-    auto *entry = func.addEntryBlock();
+    auto *entry = func.addEntryBlock(builder);
     builder.setInsertionPointToStart(entry);
     mlir::Value in  = entry->getArgument(0);
     mlir::Value out = entry->getArgument(1);
 
     // create [alloca i256, i64 stack_size]
-    mlir::Value stack = builder.create<mlir::LLVM::AllocaOp>(loc, ptr, i256, ci64(stack_size));
+    mlir::Value stack = mlir::LLVM::AllocaOp::create(builder, loc, ptr, i256, ci64(stack_size));
         
     // lower each StackIR op to LLVM dialect ops
     for (auto &op : stackIR_module.getBodyRegion().front().getOperations()) {
@@ -132,7 +132,7 @@ mlir::ModuleOp Lowerer::lower(mlir::ModuleOp stackIR_module) {
             // %val2 = load i256, ptr %stack_ptr_2
             auto val2        = load(stack_ptr_2);
             // %val = add i256 %val1, %val2
-            auto val         = builder.create<mlir::LLVM::AddOp>(loc, i256, val1, val2);
+            auto val         = mlir::LLVM::AddOp::create(builder, loc, i256, val1, val2);
             // %stack_ptr = getelementptr i256, ptr %stack, i64 (p-2)
             auto stack_ptr   = gep256(stack, ci64(p - 2));
             // store i256 %val, ptr %stack_ptr
@@ -150,7 +150,7 @@ mlir::ModuleOp Lowerer::lower(mlir::ModuleOp stackIR_module) {
             // %val2 = load i256, ptr %stack_ptr_2
             auto val2        = load(stack_ptr_2);
             // %val = sub i256 %val1, %val2
-            auto val         = builder.create<mlir::LLVM::SubOp>(loc, i256, val1, val2);
+            auto val         = mlir::LLVM::SubOp::create(builder, loc, i256, val1, val2);
             // %stack_ptr = getelementptr i256, ptr %stack, i64 (p-2)
             auto stack_ptr   = gep256(stack, ci64(p - 2));
             // store i256 %val, ptr %stack_ptr
